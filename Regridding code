@@ -1,0 +1,172 @@
+
+
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Oct 23 15:41:21 2024
+
+@author: angel
+"""
+import numpy as np
+
+from astropy.io import fits
+from reproject import reproject_interp
+from spectral_cube import SpectralCube   #Look up spectral_cube web to find way to regrid both dimensions...
+import radio_beam
+import matplotlib.pyplot as plt
+
+from astropy.wcs import WCS
+
+
+cube1 = SpectralCube.read('NGC0001_12CO_rebase5_smooth1.3_hanning2.fits') # reading in 3D cube file 
+mask = SpectralCube.read('mask_NGC0001_Havfield_v1.fits') # reading in mask file
+print("Cube Dimensions:")
+print(cube1)
+# print("")
+# print("Mask Dimensions")
+# print(mask)
+
+# #mask_spectralresample = mask.spectral_interpolate(cube1.spectral_axis, suppress_smooth_warning=True)  #Spectrally regrid mask to cube dimensions
+# tgthdr = cube1.header
+# #mask_spatial_reproj = mask.reproject(tgthdr, order = 'nearest-neighbor') #spatial reprojection
+
+# #mask_2 = mask_spatial_reproj.spectral_interpolate(cube1.spectral_axis, suppress_smooth_warning=True)  #spectral regridding to previous reprojected mask
+
+
+
+    
+    
+     
+    
+   
+
+
+# #mask_spectralresample = mask.reproject(tgthdr)
+# print("")
+# print("spatial only mask:")
+# print(mask_spatial_reproj)
+# print("")
+# print("Spatially + Spectrally Regridded Mask")
+# print(mask_2)  #print spatially + spectrally regridded Mask
+
+
+
+#mask_2.write('%s_NGC0001(regrid)_mask_atmp3%s.fits', overwrite=True)       #Make new 
+#mask_spatial_reproj.write("spatial_only_mask.fits", overwrite=True)
+
+###Start of nan replacement###
+# file = fits.open('%s_NGC0001(regrid)_mask_atmp3%s.fits')
+
+# bruh = np.array(file[0].data)
+
+# for i in range(len(bruh)):  #range of 197
+#     for j in range(len(bruh[0])): #range of 98
+#         for k in range(len(bruh[0,0])): #range of 97
+#             if(np.isnan(bruh[i,j,k]) == True):
+#                 bruh[i,j,k] = 0         #replace nans with zeros
+#             if(bruh[i,j,k] < 0.1):
+#                 bruh[i,j,k] = 0         #replace small values with zeros
+
+            
+            
+
+# hdu = fits.PrimaryHDU(bruh,tgthdr)      #Attach new data to a header of cube1 and make it an HDU
+
+# hdu.writeto('%s_NGC0001(regrid)_mask_atmp4%s.fits', overwrite= True)    # Write the HDU to a FITS file
+
+
+# cube2 = SpectralCube.read('NGC0001_12CO_rebase5_smooth1.3_hanning2.fits') # reading in 3D cube file 
+# mask = SpectralCube.read('mask_NGC0001_Havfield_v1.fits') # reading in mask file
+# print("Cube Dimensions:")
+# print(cube1)
+# print("")
+# print("Mask Dimesions")
+# print(mask)
+
+# #mask_spectralresample = mask.spectral_interpolate(cube1.spectral_axis, suppress_smooth_warning=True)  #Spectrally regrid mask to cube dimensions
+# tgthdr = cube1.header
+# mask_spatial_reproj = mask.reproject(tgthdr, order = 'nearest-neighbor') #spatial reprojection
+
+# mask_2 = mask_spatial_reproj.spectral_interpolate(cube1.spectral_axis, suppress_smooth_warning=True)  #spectral regridding to previous reprojected mask
+
+
+
+
+###Start of Moment Maps###
+Mask = SpectralCube.read('%s_NGC0001(regrid)_mask_atmp4%s.fits') # reading in 3D cube file 
+moment_0 = Mask.moment(order=0)  
+
+moment_0.write('moment0.fits', overwrite = True)  
+moment_0.hdu  
+moment_0.header
+#moment_0.quicklook()
+
+#origin at zero and add color bar
+
+plt.figure(figsize = (10,10))
+ax1 = plt.subplot(221, projection = Mask.wcs.celestial)
+im1 = ax1.imshow(moment_0.data, cmap='viridis')
+cb = plt.colorbar(mappable=im1, shrink = 0.8)
+
+# plt.figure(figsize = (10,10))
+# ax1 = plt.subplot(221, projection = WCS(moment_0))
+# im1 = ax1.imshow(moment_0.data, cmap='viridis')
+# cb = plt.colorbar(mappable=im1, shrink = 0.8)
+
+
+moment_1 = Mask.moment(order=1)
+
+plt.figure(figsize = (10,10))
+ax1 = plt.subplot(221, projection = Mask.wcs.celestial)
+im1 = ax1.imshow(moment_1.hdu.data-4450, cmap='bwr')
+cb = plt.colorbar(mappable=im1, shrink = 0.8)
+plt.show()
+
+
+moment_2 = np.sqrt(Mask.moment(order=2)) #wnat units of velocty
+
+plt.figure(figsize = (10,10))
+ax1 = plt.subplot(221, projection = Mask.wcs.celestial)
+im1 = ax1.imshow(moment_2.hdu.data, cmap='bwr')
+cb = plt.colorbar(mappable=im1, shrink = 0.8)
+plt.show()
+
+moment_3 = Mask.moment(order=3)
+#looks at assymetry of line
+
+plt.figure(figsize = (10,10))
+ax1 = plt.subplot(221, projection = Mask.wcs.celestial)
+im1 = ax1.imshow(moment_3.hdu.data, cmap='bwr')
+cb = plt.colorbar(mappable=im1, shrink = 0.8)
+plt.show()
+
+
+moment_8 = Mask.moment(order=8)
+ax1 = plt.subplot(221, projection = Mask.wcs.celestial)
+im1 = ax1.imshow(moment_8.hdu.data, cmap='bwr')
+cb = plt.colorbar(mappable=im1, shrink = 0.8)
+plt.show()
+
+
+# Temp = moment_0[0]
+# Vel = moment_0[1]
+
+# plt.plot(Temp,Vel)
+
+# moment_1 = Mask.moment(order=1)
+# moment_1.quicklook()
+
+# subarrays = np.split(moment_0, 2)
+# print("After splitting 2-D array along axis 0:\n", subarrays)
+
+# #print(moment_0)
+#print(moment_1)
+# f = aplpy.FITSFigure(moment_0.hdu)  
+# f.show_colorscale()  
+# f.save('moment_0.png')  
+
+
+
+
+
+
+
